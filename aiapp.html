@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John's AI Tetris Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background: url('assets/img/bg-tetris.png') no-repeat center center fixed;
+            background-size: cover; /* Ensures the image covers the entire screen */
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        .tetris-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        canvas {
+            border: 1px solid #fff;
+            background-color: #111;
+            display: block;
+        }
+
+        /* .score, .level {
+            margin-top: 5px;
+        } */
+
+        .button {
+            position: absolute; /* Allows positioning relative to the page */
+            top: 10px; /* Distance from the top of the page */
+            left: 10px; /* Distance from the left of the page */
+            padding: 10px 20px; /* Space inside the button */
+            color: #fff; /* Text color */
+            background-color: #007BFF; /* Button background color */
+            text-decoration: none; /* Removes underline */
+            border: none; /* Removes border */
+            border-radius: 5px; /* Rounded corners */
+            font-size: 16px; /* Font size */
+            font-weight: bold; /* Bold text */
+            text-align: center; /* Centers the text */
+            cursor: pointer; /* Changes cursor to a pointer on hover */
+            transition: background-color 0.3s; /* Smooth hover effect */
+            z-index: 1; /* Ensures it appears above other elements */
+        }
+
+        .button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px; /* Add some space between buttons */
+            flex-wrap: nowrap; /* Prevent buttons from wrapping */
+            overflow-x: auto; /* Allow horizontal scrolling if needed */
+            padding: 10px; /* Optional padding for better spacing */
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+        }
+
+        .controls::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Webkit browsers */
+        }
+
+        .control-btn {
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            flex: 0 0 auto; /* Prevent buttons from resizing */
+        }
+
+        .control-btn:hover {
+            background: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                justify-content: start; /* Align buttons to the left on small screens */
+            }
+
+            .control-btn {
+                min-width: 50px; /* Ensure buttons don’t shrink too much */
+                padding: 10px; /* Adjust padding for smaller screens */
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+    <a href="resume.html" class="button">Back to Resume</a>
+
+    <div class="tetris-container">
+        <canvas id="tetris"></canvas>
+        <div class="score">
+            <h2>Score: <span id="score">0</span></h2>
+        </div>
+        <div class="level">
+            <h2>Level: <span id="level">1</span></h2>
+        </div>
+    </div>
+    <div class="controls">
+        <button class="control-btn" onclick="moveLeft()">←</button>
+        <button class="control-btn" onclick="rotatePiece()">↑</button>
+        <button class="control-btn" onclick="moveDown()">↓</button>
+        <button class="control-btn" onclick="moveRight()">→</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('tetris');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = 300;
+        canvas.height = 600;
+
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = canvas.width / COLS;
+
+        // Define a color map for each type of piece
+        const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A6', '#A633FF', '#FF9933', '#33FFF0'];
+
+        // Pieces now contain shape and color
+        const pieces = [
+            { shape: [[1, 1, 1, 1]], color: 0 }, // I
+            { shape: [[1, 1], [1, 1]], color: 1 }, // O
+            { shape: [[0, 1, 0], [1, 1, 1]], color: 2 }, // T
+            { shape: [[1, 1, 0], [0, 1, 1]], color: 3 }, // S
+            { shape: [[0, 1, 1], [1, 1, 0]], color: 4 }, // Z
+            { shape: [[1, 1, 1], [1, 0, 0]], color: 5 }, // L
+            { shape: [[1, 1, 1], [0, 0, 1]], color: 6 }, // J
+        ];
+
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        let currentPiece;
+        let currentX;
+        let currentY;
+        let score = 0;
+        let level = 1;
+        let linesCleared = 0;
+        let gameSpeed = 800;
+        let paused = false;
+
+        function drawBlock(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = '#000';
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+
+        // Draw the piece with its shape and color
+        function drawPiece(piece, offsetX, offsetY) {
+            piece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        drawBlock(offsetX + x, offsetY + y, COLORS[piece.color]); // Use the piece color
+                    }
+                });
+            });
+        }
+
+        // Reset the piece and set its position
+        function resetPiece() {
+            const id = Math.floor(Math.random() * pieces.length);
+            currentPiece = { ...pieces[id] };  // Create a copy of the piece with shape and color
+            currentX = Math.floor(COLS / 2) - Math.floor(currentPiece.shape[0].length / 2);
+            currentY = 0;
+            if (collision()) {
+                board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+                score = 0;
+                level = 1;  // Reset level when game restarts
+                linesCleared = 0;  // Reset cleared lines
+                updateScore();
+                updateLevel();
+            }
+        }
+
+        // Check for collision with the wall or other pieces
+        function collision() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        if (
+                            currentY + y >= ROWS || // Outside the board
+                            currentX + x < 0 || currentX + x >= COLS || // Outside the board horizontally
+                            board[currentY + y] && board[currentY + y][currentX + x] !== 0 // Collides with other pieces
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        function increaseLevel() {
+            linesCleared++;
+
+            if (linesCleared >= level * 10) {
+                level++;
+                gameSpeed = Math.max(1000 - level * 100, 100);
+                updateLevel();
+            }
+        }
+        // Merge the piece with the board after it reaches the bottom
+        function mergePiece() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        board[currentY + y][currentX + x] = currentPiece.color + 1;
+                    }
+                });
+            });
+        }
+
+        // Rotate the piece
+        function rotatePiece() {
+            const oldPiece = currentPiece.shape;
+            const oldX = currentX;
+            const oldY = currentY;
+
+            // Rotate the piece 90 degrees clockwise
+            currentPiece.shape = currentPiece.shape[0].map((_, i) => currentPiece.shape.map(row => row[i])).reverse();
+
+            // If a collision happens, revert to the original piece and position
+            if (collision()) {
+                currentPiece.shape = oldPiece;
+                currentX = oldX;
+                currentY = oldY;
+            }
+        }
+
+        // Clear any full lines
+        function clearLines() {
+            let lines = 0;
+            board = board.reduce((acc, row) => {
+                if (row.every(value => value !== 0)) {
+                    lines++;
+                    acc.unshift(Array(COLS).fill(0));
+                } else {
+                    acc.push(row);
+                }
+                return acc;
+            }, []);
+            if (lines > 0) {
+                score += lines * 10;
+                updateScore();
+                increaseLevel();
+            }
+        }
+
+        // Update the score display
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function updateLevel() {
+            document.getElementById('level').textContent = level;
+        }
+
+        // Move the piece down one step
+        function moveDown() {
+            currentY++;
+            if (collision()) {
+                currentY--;
+                mergePiece();
+                clearLines();
+                resetPiece();
+            }
+        }
+
+        // Draw the board and the current piece
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            board.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        drawBlock(x, y, COLORS[value - 1]);
+                    }
+                });
+            });
+            drawPiece(currentPiece, currentX, currentY);
+        }
+
+        function moveLeft() {
+            currentX--;
+            if (collision()) currentX++;
+            drawBoard();
+        }
+
+        function moveRight() {
+            currentX++;
+            if (collision()) currentX--;
+            drawBoard();
+        }
+
+        function moveDown() {
+            currentY++;
+            if (collision()) {
+                currentY--;
+                mergePiece();
+                clearLines();
+                resetPiece();
+            }
+            drawBoard();
+        }
+
+        // Game loop that runs every 1000ms (1 second)
+        function gameLoop() {
+            if (!paused) {
+                moveDown();
+                drawBoard();
+                setTimeout(gameLoop, gameSpeed);
+            }
+        }
+
+        // Handle user input
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') {
+                currentX--;
+                if (collision()) currentX++;
+            } else if (event.key === 'ArrowRight') {
+                currentX++;
+                if (collision()) currentX--;
+            } else if (event.key === 'ArrowDown') {
+                moveDown();
+            } else if (event.key === 'ArrowUp') {
+                rotatePiece();
+            } else if (event.key === 'p' || event.key === 'P') {
+                paused = !paused; // Toggle the pause state
+                if (!paused) gameLoop(); // Restart game loop if resumed
+            }
+        });
+        
+
+        resetPiece();
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+body {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.site-heading-lower {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.mb-3 {
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+a {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+}
+
+#mainNav {
+    background-color: rgba(230, 167, 86, 0.9);
+}
+
+.section-heading .section-heading-lower {
+    display: block;
+    font-size: 2rem;
+    font-weight: 100;
+}
+
+.youtube-video {
+    width: 100%; /* Use full width of the container */
+    height: auto; /* Set a fixed height */
+    border: none; /* Remove default border */
+    border-radius: 10px; /* Optional: rounded corners */
+    aspect-ratio: 16 / 9;
+}
+
+.product-item .product-item-img {
+    width: 60vw;
+    max-width: 60vw;
+}
+
+#mainNav .navbar-brand {
+    color: black;
+}
