@@ -26,24 +26,22 @@
             z-index: 1;
         }
 
-        .score {
-            position: absolute;
-            top: 1px;
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            gap: 20px;  /* Adjust this to control the space between the score and level */
-            margin: 1px 0;  /* Reduces the space between score and level */
+
+        .score-level-box {
+            position: absolute; /* Positioned inside tetris-container */
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            background-color: rgba(0, 123, 255); /* Semi-transparent black background */
+            border-radius: 5px; /* Rounded corners */
+            border: 2px solid #fff; /* White border */
+            text-align: center;
+            color: #fff;
         }
 
-        .level {
-            position: absolute;
-            top: 30px;
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            gap: 20px;  /* Adjust this to control the space between the score and level */
-            margin: 1px 0;  /* Reduces the space between score and level */
+        .score-level-box h2 {
+            margin: 5px 0;
+            font-size: 20px;
         }
         
 
@@ -76,7 +74,7 @@
         }
 
         .button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
+            background-color: #007BFF; /* Darker blue on hover */
         }
 
         .controls {
@@ -135,10 +133,8 @@
 
     <div class="tetris-container">
         <canvas id="tetris"></canvas>
-        <div class="score">
+        <div class="score-level-box">
             <h2>Score: <span id="score">0</span></h2>
-        </div>
-        <div class="level">
             <h2>Level: <span id="level">1</span></h2>
         </div>
     </div>
