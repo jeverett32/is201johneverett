@@ -322,15 +322,17 @@
             }
             return false;
         }
-        function increaseLevel() {
-            linesCleared++;
 
-            if (linesCleared >= level * 10) {
+        function increaseLevel() {
+            const requiredLines = level * 3; // Lines needed for the current level
+
+            if (linesCleared >= requiredLines) {
                 level++;
-                gameSpeed = Math.max(1000 - level * 100, 100);
+                gameSpeed = Math.max(1000 - level * 100, 100); // Adjust game speed
                 updateLevel();
             }
         }
+
         // Merge the piece with the board after it reaches the bottom
         function mergePiece() {
             currentPiece.shape.forEach((row, y) => {
@@ -373,6 +375,7 @@
             }, []);
             if (lines > 0) {
                 score += lines * 10;
+                linesCleared += lines;
                 updateScore();
                 increaseLevel();
             }
