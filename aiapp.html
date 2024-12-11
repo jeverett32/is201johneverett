@@ -204,6 +204,36 @@
             display: none;
         }
 
+        .game-over-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            padding: 20px 40px;
+            border-radius: 10px;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-over-popup button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .game-over-popup button:hover {
+            background-color: #0056b3;
+        }
+
     </style>
 </head>
 <body>
@@ -236,6 +266,11 @@
             </ul>
             <button onclick="closeInfo()">Close</button>
         </div>
+    </div>
+
+    <div id="gameOverPopup" class="game-over-popup hidden">
+        <h1>Game Over</h1>
+        <button id="playAgainButton">Play Again</button>
     </div>
 
     <script>
@@ -298,12 +333,9 @@
             currentX = Math.floor(COLS / 2) - Math.floor(currentPiece.shape[0].length / 2);
             currentY = 0;
             if (collision()) {
-                board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-                score = 0;
-                level = 1;  // Reset level when game restarts
-                linesCleared = 0;  // Reset cleared lines
-                updateScore();
-                updateLevel();
+                // Show Game Over Pop-up
+                document.getElementById('gameOverPopup').classList.remove('hidden');
+                paused = true; // Pause the game
             }
         }
 
@@ -465,6 +497,25 @@
             paused = false; // Resume the game
             gameLoop(); // Restart the game loop
         }
+
+        document.getElementById('playAgainButton').addEventListener('click', function() {
+            // Reset the game state
+            board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            score = 0;
+            level = 1;
+            linesCleared = 0;
+            gameSpeed = 800;
+            updateScore();
+            updateLevel();
+
+            // Hide Game Over Pop-up
+            document.getElementById('gameOverPopup').classList.add('hidden');
+            
+            paused = false; // Resume the game
+            resetPiece();
+            gameLoop();
+        });
+
 
         // Handle user input
         document.addEventListener('keydown', (event) => {
